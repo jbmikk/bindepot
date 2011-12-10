@@ -1,0 +1,7 @@
+<?xml version='1.0' standalone='yes'?>
+<bindepot default-path="./files">
+	<store name="images" type="image" >
+	</store>
+	<store name="docs" type="binary" >
+	</store>
+</bindepot>
