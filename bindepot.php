@@ -8,7 +8,9 @@ class FileResult {
 class BinaryHandler {
 	function store($path, $id, $file) {
 		if(is_array($file)) {
-			move_uploaded_file($file['tmp_name'], "$path/$id");
+			if(!move_uploaded_file($file['tmp_name'], "$path/$id")) {
+				throw new Exception("FileStorage: Could not move uploaded file: {$file['tmp_name']}");
+			}
 		}
 		else {
 			$fh = fopen("$path/$id", 'wb') or die("Cannot open file: $id");
