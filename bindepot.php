@@ -49,10 +49,10 @@ class BinDepot{
 	private function load_configuration($conf, $store) {
 		$conf = simplexml_load_file($conf);
 
-		$path = $conf->xpath('/file-storage/@default-path');
+		$path = $conf->xpath('/bindepot/@default-path');
 		$this->default_path = isset($path[0]) ? $path[0]: '';
 
-		$type = $conf->xpath("/file-storage/store[@name='a$store']/@type");
+		$type = $conf->xpath("/bindepot/store[@name='a$store']/@type");
 		$this->type = isset($type[0]) ? $type[0]: 'binary';
 	}
 
