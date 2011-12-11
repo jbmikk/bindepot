@@ -6,31 +6,44 @@ class FileResult {
 }
 
 class BinaryHandler {
-	function store($path, $id, $file) {
+	protected $conf;
+	protected $path;
+
+	function __construct($path, $conf) {
+		$this->conf = $conf;
+		$this->path = $path;
+	}
+
+	function store($id, $file) {
 		if(is_array($file)) {
-			if(!move_uploaded_file($file['tmp_name'], "$path/$id")) {
+			if(!move_uploaded_file($file['tmp_name'], "$this->path/$id")) {
 				throw new Exception("FileStorage: Could not move uploaded file: {$file['tmp_name']}");
 			}
 		}
 		else {
-			$fh = fopen("$path/$id", 'wb') or die("Cannot open file: $id");
+			$fh = fopen("$this->path/$id", 'wb') or die("Cannot open file: $id");
 			fwrite($fh, $file);
 			fclose($fh);
 		}
 	}
 
-	function retrieve($path, $id) {
-		return new FileResult("$path/$id");
+	function retrieve($id, $mode) {
+		return new FileResult("$this->path/$id");
 	}
 }
 
 class ImageHandler extends BinaryHandler {
-	function store($path, $id, $file) {
-		parent:store($path, $id, $file);
+	function __construct($path, $conf) {
+		$this->conf = $conf;
+		$this->path = $path;
 	}
 
-	function retrieve($path, $id, $mode) {
-		return parent::retrieve($path, $id, $mode);
+	function store($id, $file) {
+		parent::store($id, $file);
+	}
+
+	function retrieve($id, $mode) {
+		return parent::retrieve($id, $mode);
 	}
 }
 
@@ -44,7 +57,9 @@ class BinDepot{
 		if(@!is_writable($this->default_path)) {
 			throw new Exception("FileStorage: default storage directory is not writable: $this->default_path");
 		}
-		$this->path = "$this->default_path/$store";
+		if(@!file_exists($this->path))
+			mkdir($this->path, 0777);
+
 		$this->handler = $this->getHandler($store);
 	}
 
@@ -53,32 +68,34 @@ class BinDepot{
 
 		$path = $conf->xpath('/bindepot/@default-path');
 		$this->default_path = isset($path[0]) ? $path[0]: '';
+		$this->path = "$this->default_path/$store";
 
-		$type = $conf->xpath("/bindepot/store[@name='a$store']/@type");
+		$type = $conf->xpath("/bindepot/store[@name='$store']/@type");
 		$this->type = isset($type[0]) ? $type[0]: 'binary';
+
+		$storeConf = $conf->xpath("/bindepot/store[@name='$store']");
+		$this->storeConf = isset($storeConf[0])? $storeConf[0]: null;
 	}
 
 	private function getHandler($store) {
 		switch($this->type) {
 			case 'image':
-				$handler = new ImageHandler();
+				$handler = new ImageHandler($this->path, $this->storeConf);
 				break;
 			case 'binary':
 			default:
-				$handler = new BinaryHandler();
+				$handler = new BinaryHandler($this->path, $this->storeConf);
 				break;
 		}
 		return $handler;
 	}
 
 	function store($id, $file) {
-		if(@!file_exists($this->path))
-			mkdir($this->path, 0777);
-		$this->handler->store($this->path, $id, $file);
+		$this->handler->store($id, $file);
 	}
 
 	function retrieve($id, $format) {
-		return $this->handler->retrieve($this->path, $id, '');
+		return $this->handler->retrieve($id, '');
 	}
 }
 ?>
