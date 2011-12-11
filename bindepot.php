@@ -1,5 +1,5 @@
 <?php
-class FileResult {
+class FileElement {
 	function __construct($path) {
 		$this->path = $path;
 	}
@@ -28,7 +28,17 @@ class BinaryHandler {
 	}
 
 	function retrieve($id, $mode) {
-		return new FileResult("$this->path/$id");
+		return new FileElement("$this->path/$id");
+	}
+
+	function find($expression) {
+		$result = array();
+		$dir = opendir($this->path);
+		while($file = readdir($dir)) {
+			if($file != "." && $file != "..")
+				$result[] = $file;
+		}
+		return $result;
 	}
 }
 
@@ -44,6 +54,10 @@ class ImageHandler extends BinaryHandler {
 
 	function retrieve($id, $mode) {
 		return parent::retrieve($id, $mode);
+	}
+
+	function find($expression) {
+		return parent::find($expression);
 	}
 }
 
@@ -94,8 +108,12 @@ class BinDepot{
 		$this->handler->store($id, $file);
 	}
 
-	function retrieve($id, $format) {
-		return $this->handler->retrieve($id, '');
+	function retrieve($id, $mode = null) {
+		return $this->handler->retrieve($id, $mode);
+	}
+
+	function find($expression = null) {
+		return $this->handler->find($expression);
 	}
 }
 ?>
