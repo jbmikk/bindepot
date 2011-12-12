@@ -45,10 +45,51 @@ class BinaryHandler {
 class ImageHandler extends BinaryHandler {
 	function __construct($path, $conf) {
 		$this->conf = $conf;
-		$this->path = $path;
+		$this->path = "$path/original";
+		$this->path_copy = $path;
+		if(@!file_exists($this->path))
+			mkdir($this->path, 0777);
+
+		$this->formats = array();
+		$formats = $this->conf->xpath('format');
+		foreach($formats as $format) {
+			$width = $format->xpath("@width");
+			$width = (int)$width[0];
+			$height = $format->xpath("@height");
+			$height = (int)$height[0];
+			$this->formats[] = array(
+				'width' => $width,
+				'height' => $height
+			);
+		}
+	}
+
+	function storeCopy($id, $file, $format) {
+		$filepath = $file['tmp_name'];
+		$width = $format['width'];
+		$height = $format['height'];
+		$info = getimagesize($filepath);
+		$path = "$this->path_copy/$width-$height";
+		if(@!file_exists($path))
+			mkdir($path, 0777);
+		switch($info[2]) {
+			case IMAGETYPE_JPEG:
+				$image = imagecreatefromjpeg($filepath);
+				break;
+			default:
+				throw new Exception("FileStorage: image format not supported, IMAGETYPE: {$info[2]}");
+				break;
+		}
+		$new_image = imagecreatetruecolor($width, $height);
+		imagecopyresampled($new_image, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
+		imagejpeg($new_image, "$path/$id");
+		imagedestroy($new_image);
 	}
 
 	function store($id, $file) {
+		foreach($this->formats as $format) {
+			$this->storeCopy($id, $file, $format);
+		}
 		parent::store($id, $file);
 	}
 
