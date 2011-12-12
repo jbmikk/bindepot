@@ -66,22 +66,42 @@ class ImageHandler extends BinaryHandler {
 
 	function storeCopy($id, $file, $format) {
 		$filepath = $file['tmp_name'];
-		$width = $format['width'];
-		$height = $format['height'];
+		$new_w = $format['width'];
+		$new_h = $format['height'];
 		$info = getimagesize($filepath);
-		$path = "$this->path_copy/$width-$height";
+		$path = "$this->path_copy/$new_w-$new_h";
 		if(@!file_exists($path))
 			mkdir($path, 0777);
 		switch($info[2]) {
 			case IMAGETYPE_JPEG:
 				$image = imagecreatefromjpeg($filepath);
+				$old_w = imagesx($image);
+				$old_h = imagesy($image);
 				break;
 			default:
 				throw new Exception("FileStorage: image format not supported, IMAGETYPE: {$info[2]}");
 				break;
 		}
-		$new_image = imagecreatetruecolor($width, $height);
-		imagecopyresampled($new_image, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
+		$new_image = imagecreatetruecolor($new_w, $new_h);
+
+		$visible_x = 0;
+		$visible_y = 0;
+		$visible_w = $old_w;
+		$visible_h = $old_h;
+
+		if($old_w/$old_h > $new_w/$new_h) {
+			//clip horizontally
+			$ratio = $old_h/$new_h;
+			$visible_w = $new_w * $ratio;
+			$visible_x = ($old_w - $visible_w)/2;
+		} else {
+			//clip vertically
+			$ratio = $old_w/$new_w;
+			$visible_h = $new_h * $ratio;
+			$visible_y = ($old_h - $visible_h)/2;
+		}
+
+		imagecopyresampled($new_image, $image, 0, 0, $visible_x, $visible_y, $new_w, $new_h, $visible_w, $visible_h);
 		imagejpeg($new_image, "$path/$id");
 		imagedestroy($new_image);
 	}
