@@ -1,4 +1,13 @@
 <?php
+function xml_get_attr($xml, $attr, $default = null) {
+	$value = $xml->xpath($attr);
+	if(count($value) > 0)
+		$value = $value[0];
+	else
+		$value = $default;
+	return $value;
+}
+
 class FileElement {
 	function __construct($path) {
 		$this->path = $path;
@@ -53,13 +62,10 @@ class ImageHandler extends BinaryHandler {
 		$this->formats = array();
 		$formats = $this->conf->xpath('format');
 		foreach($formats as $format) {
-			$width = $format->xpath("@width");
-			$width = (int)$width[0];
-			$height = $format->xpath("@height");
-			$height = (int)$height[0];
 			$this->formats[] = array(
-				'width' => $width,
-				'height' => $height
+				'width' => (int)xml_get_attr($format, "@width"),
+				'height' => (int)xml_get_attr($format, "@height"),
+				'quality' => (int)xml_get_attr($format, "@quality", 90)
 			);
 		}
 	}
@@ -102,7 +108,8 @@ class ImageHandler extends BinaryHandler {
 		}
 
 		imagecopyresampled($new_image, $image, 0, 0, $visible_x, $visible_y, $new_w, $new_h, $visible_w, $visible_h);
-		imagejpeg($new_image, "$path/$id");
+echo $format['quality'];
+		imagejpeg($new_image, "$path/$id", $format['quality']);
 		imagedestroy($new_image);
 	}
 
