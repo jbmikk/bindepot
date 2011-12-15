@@ -108,7 +108,6 @@ class ImageHandler extends BinaryHandler {
 		}
 
 		imagecopyresampled($new_image, $image, 0, 0, $visible_x, $visible_y, $new_w, $new_h, $visible_w, $visible_h);
-echo $format['quality'];
 		imagejpeg($new_image, "$path/$id", $format['quality']);
 		imagedestroy($new_image);
 	}
