@@ -8,9 +8,48 @@ function xml_get_attr($xml, $attr, $default = null) {
 	return $value;
 }
 
-class FileElement {
-	function __construct($path) {
+class DiskFile {
+	function __construct($path, $id) {
 		$this->path = $path;
+		$this->id = $id;
+	}
+
+	function copyTo($path) {
+		throw new Exception("DiskFile.copyTo not implemented!");
+	}
+}
+
+class UploadFile {
+	function __construct($desc) {
+		$this->path = $desc['tmp_name'];
+	}
+
+	function copyTo($path) {
+		if(!move_uploaded_file($this->path, $path)) {
+			throw new Exception("FileStorage: Could not move uploaded file: {$this->path}");
+		}
+	}
+}
+
+class MemFile {
+	function __construct($data) {
+		$this->data = $data;
+	}
+
+	function copyTo($path) {
+		$fh = fopen($path, 'wb') or die("Cannot open file: $path");
+		fwrite($fh, $this->data);
+		fclose($fh);
+	}
+}
+
+function buildFile($source, $id) {
+	if(is_string($source)) {
+		return new DiskFile("$source/$id", $id);
+	} else if(is_array($source)) {
+		return new UploadFile($source);
+	} else {
+		return new MemFile($source);
 	}
 }
 
@@ -24,30 +63,25 @@ class BinaryHandler {
 	}
 
 	function store($id, $file) {
-		if(is_array($file)) {
-			if(!move_uploaded_file($file['tmp_name'], "$this->path/$id")) {
-				throw new Exception("FileStorage: Could not move uploaded file: {$file['tmp_name']}");
-			}
-		}
-		else {
-			$fh = fopen("$this->path/$id", 'wb') or die("Cannot open file: $id");
-			fwrite($fh, $file);
-			fclose($fh);
-		}
+		$file->copyTo("$this->path/$id");
 	}
 
 	function retrieve($id, $mode) {
-		return new FileElement("$this->path/$id");
+		return buildFile($this->path, $id);
 	}
 
 	function find($expression) {
 		$result = array();
 		$dir = opendir($this->path);
-		while($file = readdir($dir)) {
-			if($file != "." && $file != "..")
-				$result[] = $file;
+		while($id = readdir($dir)) {
+			if($id != "." && $id!= "..")
+				
+				$result[] = buildFile($this->path, $id);
 		}
 		return $result;
+	}
+
+	function reconfig($mode) {
 	}
 }
 
@@ -71,16 +105,15 @@ class ImageHandler extends BinaryHandler {
 	}
 
 	function storeCopy($id, $file, $format) {
-		$filepath = $file['tmp_name'];
 		$new_w = $format['width'];
 		$new_h = $format['height'];
-		$info = getimagesize($filepath);
+		$info = getimagesize($file->path);
 		$path = "$this->path_copy/$new_w-$new_h";
 		if(@!file_exists($path))
 			mkdir($path, 0777);
 		switch($info[2]) {
 			case IMAGETYPE_JPEG:
-				$image = imagecreatefromjpeg($filepath);
+				$image = imagecreatefromjpeg($file->path);
 				$old_w = imagesx($image);
 				$old_h = imagesy($image);
 				break;
@@ -123,7 +156,17 @@ class ImageHandler extends BinaryHandler {
 		return parent::retrieve($id, $mode);
 	}
 
-	function find($expression) {
+	function reconfig($mode) {
+		$files = $this->find();
+		foreach($files as $file) {
+			foreach($this->formats as $format) {
+				$this->storeCopy($file->id, $file, $format);
+			}
+		}
+		return parent::reconfig($mode);
+	}
+
+	function find($expression = null) {
 		return parent::find($expression);
 	}
 }
@@ -172,6 +215,7 @@ class BinDepot{
 	}
 
 	function store($id, $file) {
+		$file = buildFile($file, $id);
 		$this->handler->store($id, $file);
 	}
 
@@ -179,8 +223,13 @@ class BinDepot{
 		return $this->handler->retrieve($id, $mode);
 	}
 
+	function reconfig($mode = null) {
+		return $this->handler->reconfig($mode);
+	}
+
 	function find($expression = null) {
 		return $this->handler->find($expression);
 	}
 }
+
 ?>
