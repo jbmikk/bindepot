@@ -15,7 +15,9 @@ class DiskFile {
 	}
 
 	function copyTo($path) {
-		throw new Exception("DiskFile.copyTo not implemented!");
+		if (!copy($this->path, $path)) {
+			throw new Exception("FileStorage: could not copy file: {$this->path} to $path");
+		}
 	}
 }
 
@@ -45,7 +47,7 @@ class MemFile {
 
 function buildFile($source, $id) {
 	if(is_string($source)) {
-		return new DiskFile("$source/$id", $id);
+		return new DiskFile($source, $id);
 	} else if(is_array($source)) {
 		return new UploadFile($source);
 	} else {
