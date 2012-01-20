@@ -101,7 +101,8 @@ class ImageHandler extends BinaryHandler {
 			$this->formats[] = array(
 				'width' => (int)xml_get_attr($format, "@width"),
 				'height' => (int)xml_get_attr($format, "@height"),
-				'quality' => (int)xml_get_attr($format, "@quality", 90)
+				'quality' => (int)xml_get_attr($format, "@quality", 90),
+				'name' => xml_get_attr($format, "@name", '')
 			);
 		}
 	}
@@ -110,7 +111,12 @@ class ImageHandler extends BinaryHandler {
 		$new_w = $format['width'];
 		$new_h = $format['height'];
 		$info = getimagesize($file->path);
-		$path = "$this->path_copy/$new_w-$new_h";
+		if($format['name'] != '') {
+			$name = $format['name'];
+		} else {
+			$name = "$new_w-$new_h";
+		}
+		$path = "$this->path_copy/$name";
 		if(@!file_exists($path))
 			mkdir($path, 0777);
 		switch($info[2]) {

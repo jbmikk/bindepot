@@ -1,7 +1,7 @@
 <?xml version='1.0' standalone='yes'?>
 <bindepot default-path="./files">
 	<store name="images" type="image" >
-		<format width="80" height="80" fit="crop" />
+		<format name="small" width="80" height="80" fit="crop" />
 		<format width="150" height="120" fit="crop" />
 	</store>
 	<store name="docs" type="binary" >
