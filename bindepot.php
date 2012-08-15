@@ -98,8 +98,10 @@ class ImageHandler extends BinaryHandler {
 		$formats = $this->conf->xpath('format');
 		foreach($formats as $format) {
 			$this->formats[] = array(
-				'width' => (int)xml_get_attr($format, "@width"),
-				'height' => (int)xml_get_attr($format, "@height"),
+				'width' => (int)xml_get_attr($format, "@width", 0),
+				'height' => (int)xml_get_attr($format, "@height", 0),
+				'max-width' => (int)xml_get_attr($format, "@max-width", 0),
+				'max-height' => (int)xml_get_attr($format, "@max-height", 0),
 				'quality' => (int)xml_get_attr($format, "@quality", 90),
 				'name' => xml_get_attr($format, "@name", '')
 			);
@@ -109,11 +111,16 @@ class ImageHandler extends BinaryHandler {
 	function storeCopy($id, $file, $format) {
 		$new_w = $format['width'];
 		$new_h = $format['height'];
+		$max_w = $format['max-width'];
+		$max_h = $format['max-height'];
 		$info = getimagesize($file->path);
 		if($format['name'] != '') {
 			$name = $format['name'];
 		} else {
 			$name = "$new_w-$new_h";
+			if ($max_w != 0 || $max_h != 0) {
+				$name = $name."-max$max_w-max$max_h";
+			}
 		}
 		$path = "$this->path_copy/$name";
 		if(@!file_exists($path))
@@ -128,6 +135,32 @@ class ImageHandler extends BinaryHandler {
 				throw new Exception("FileStorage: image format not supported, IMAGETYPE: {$info[2]}");
 				break;
 		}
+
+		//Autocomplete pending dimensions for new image
+		if($new_w == 0 && $new_h != 0) {
+			$ratio = $old_h/$new_h;
+			$new_w = $old_w/$ratio;
+		} elseif($new_w != 0 && $new_h == 0) {
+			$ratio = $old_w/$new_w;
+			$new_h = $old_h/$ratio;
+		} elseif($new_w == 0 && $new_h == 0) {
+			$new_w = $old_w;
+			$new_h = $old_h;
+		}
+
+		//Cap dimensions according to max definitions
+		if($max_w > 0 && $new_w > $max_w) {
+			$ratio = $new_w/$max_w;
+			$new_h = $new_h/$ratio;
+			$new_w = $max_w;
+		}
+		if($max_h > 0 && $new_h > $max_h) {
+			$ratio = $new_h/$max_h;
+			$new_w = $new_w/$ratio;
+			$new_h = $max_h;
+		}
+
+		//Create image with final dimensions
 		$new_image = imagecreatetruecolor($new_w, $new_h);
 
 		$visible_x = 0;
@@ -135,6 +168,7 @@ class ImageHandler extends BinaryHandler {
 		$visible_w = $old_w;
 		$visible_h = $old_h;
 
+		//If aspect ratio remains the same between images, nothing is clipped
 		if($old_w/$old_h > $new_w/$new_h) {
 			//clip horizontally
 			$ratio = $old_h/$new_h;
