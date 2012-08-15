@@ -69,7 +69,7 @@ class BinaryHandler {
 	}
 
 	function retrieve($id, $mode) {
-		return buildFile($this->path, $id);
+		return buildFile("$this->path/$id", $id);
 	}
 
 	function find($expression) {
@@ -77,8 +77,7 @@ class BinaryHandler {
 		$dir = opendir($this->path);
 		while($id = readdir($dir)) {
 			if($id != "." && $id!= "..")
-				
-				$result[] = buildFile($this->path, $id);
+				$result[] = buildFile("$this->path/$id", $id);
 		}
 		return $result;
 	}
