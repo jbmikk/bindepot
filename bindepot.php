@@ -64,7 +64,17 @@ class BinaryHandler {
 		$this->path = $path;
 	}
 
+	function checkDir($path, $id) {
+		$pos = strrpos($id, "/");
+		if($pos !== false) {
+			$p = "$path/".substr($id, 0, $pos);
+			if(@!file_exists($p) || !is_dir($p))
+				mkdir($p, 0777, true);
+		}
+	}
+
 	function store($id, $file) {
+		$this->checkDir($this->path, $id);
 		$file->copyTo("$this->path/$id");
 	}
 
@@ -182,6 +192,7 @@ class ImageHandler extends BinaryHandler {
 		}
 
 		imagecopyresampled($new_image, $image, 0, 0, $visible_x, $visible_y, $new_w, $new_h, $visible_w, $visible_h);
+		$this->checkDir($path, $id);
 		imagejpeg($new_image, "$path/$id", $format['quality']);
 		imagedestroy($new_image);
 	}
