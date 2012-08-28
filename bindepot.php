@@ -138,13 +138,19 @@ class ImageHandler extends BinaryHandler {
 		switch($info[2]) {
 			case IMAGETYPE_JPEG:
 				$image = imagecreatefromjpeg($file->path);
-				$old_w = imagesx($image);
-				$old_h = imagesy($image);
+				break;
+			case IMAGETYPE_PNG:
+				$image = imagecreatefrompng($file->path);
+				break;
+			case IMAGETYPE_GIF:
+				$image = imagecreatefromgif($file->path);
 				break;
 			default:
 				throw new Exception("FileStorage: image format not supported, IMAGETYPE: {$info[2]}");
 				break;
 		}
+		$old_w = imagesx($image);
+		$old_h = imagesy($image);
 
 		//Autocomplete pending dimensions for new image
 		if($new_w == 0 && $new_h != 0) {
