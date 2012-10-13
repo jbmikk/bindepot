@@ -113,6 +113,7 @@ class ImageHandler extends BinaryHandler {
 				'max-width' => (int)xml_get_attr($format, "@max-width", 0),
 				'max-height' => (int)xml_get_attr($format, "@max-height", 0),
 				'quality' => (int)xml_get_attr($format, "@quality", 90),
+				'filter' => xml_get_attr($format, "@filter", ''),
 				'name' => xml_get_attr($format, "@name", '')
 			);
 		}
@@ -198,6 +199,31 @@ class ImageHandler extends BinaryHandler {
 		}
 
 		imagecopyresampled($new_image, $image, 0, 0, $visible_x, $visible_y, $new_w, $new_h, $visible_w, $visible_h);
+
+		switch($format['filter']) {
+		case "grayscale":
+			imagefilter($new_image, IMG_FILTER_GRAYSCALE);
+			break;
+		case "negate":
+			imagefilter($new_image, IMG_FILTER_NEGATE);
+			break;
+		case "edgedetect":
+			imagefilter($new_image, IMG_FILTER_EDGEDETECT);
+			break;
+		case "emboss":
+			imagefilter($new_image, IMG_FILTER_EMBOSS);
+			break;
+		case "gaussian_blur":
+			imagefilter($new_image, IMG_FILTER_GAUSSIAN_BLUR);
+			break;
+		case "selective_blur":
+			imagefilter($new_image, IMG_FILTER_SELECTIVE_BLUR);
+			break;
+		case "mean_removal":
+			imagefilter($new_image, IMG_FILTER_MEAN_REMOVAL);
+			break;
+		}
+
 		$this->checkDir($path, $id);
 		imagejpeg($new_image, "$path/$id", $format['quality']);
 		imagedestroy($new_image);
