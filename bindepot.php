@@ -113,6 +113,7 @@ class ImageHandler extends BinaryHandler {
 				'max-width' => (int)xml_get_attr($format, "@max-width", 0),
 				'max-height' => (int)xml_get_attr($format, "@max-height", 0),
 				'quality' => (int)xml_get_attr($format, "@quality", 90),
+				'type' => xml_get_attr($format, "@type", 'jpg'),
 				'filter' => xml_get_attr($format, "@filter", ''),
 				'name' => xml_get_attr($format, "@name", '')
 			);
@@ -125,6 +126,7 @@ class ImageHandler extends BinaryHandler {
 		$max_w = $format['max-width'];
 		$max_h = $format['max-height'];
 		$info = getimagesize($file->path);
+		$original = "jpg";
 		if($format['name'] != '') {
 			$name = $format['name'];
 		} else {
@@ -139,12 +141,15 @@ class ImageHandler extends BinaryHandler {
 		switch($info[2]) {
 			case IMAGETYPE_JPEG:
 				$image = imagecreatefromjpeg($file->path);
+				$original = "jpg";
 				break;
 			case IMAGETYPE_PNG:
 				$image = imagecreatefrompng($file->path);
+				$original = "png";
 				break;
 			case IMAGETYPE_GIF:
 				$image = imagecreatefromgif($file->path);
+				$original = "gif";
 				break;
 			default:
 				throw new Exception("FileStorage: image format not supported, IMAGETYPE: {$info[2]}");
@@ -198,6 +203,17 @@ class ImageHandler extends BinaryHandler {
 			$visible_y = ($old_h - $visible_h)/2;
 		}
 
+		//Resolve format
+		if($format['type'] == 'original')
+			$format['type'] = $original;
+		
+		//Set transparency for png
+		if($format['type'] == 'png') {
+			imagealphablending($new_image, false);
+			imagesavealpha($new_image, true);
+			$transparent = imagecolorallocatealpha($new_image, 255, 255, 255, 127);
+			imagefilledrectangle($new_image, 0, 0, $new_w, $new_h, $transparent);
+		}
 		imagecopyresampled($new_image, $image, 0, 0, $visible_x, $visible_y, $new_w, $new_h, $visible_w, $visible_h);
 
 		switch($format['filter']) {
@@ -225,7 +241,19 @@ class ImageHandler extends BinaryHandler {
 		}
 
 		$this->checkDir($path, $id);
-		imagejpeg($new_image, "$path/$id", $format['quality']);
+
+		switch($format['type']) {
+		case "png":
+			imagepng($new_image, "$path/$id", 9);
+			break;
+		case "gif":
+			imagegif($new_image, "$path/$id");
+			break;
+		default:
+		case "jpg":
+			imagejpeg($new_image, "$path/$id", $format['quality']);
+			break;
+		}
 		imagedestroy($new_image);
 	}
 

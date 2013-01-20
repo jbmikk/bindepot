@@ -2,6 +2,8 @@
 <bindepot default-path="./files">
 	<store name="images" type="image" >
 		<format name="small" width="80" height="80" fit="crop" />
+		<format name="smallpng" width="80" height="80" fit="crop" type="png"/>
+		<format name="smallorg" width="80" height="80" fit="crop" type="original"/>
 		<format width="150" height="120" fit="crop" />
 		<format name="hstrip" max-height="100" fit="crop" />
 		<format name="maxmin" max-height="100" max-width="150" fit="crop" />
