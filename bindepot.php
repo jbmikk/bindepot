@@ -268,6 +268,12 @@ class ImageHandler extends BinaryHandler {
 		return parent::retrieve($id, $mode);
 	}
 
+	function getPath($id, $mode) {
+		if($mode == null)
+			$mode = 'default';
+		return "{$this->path_copy}/$mode/$id";
+	}
+
 	function reconfig($mode) {
 		$files = $this->find();
 		foreach($files as $file) {
@@ -333,6 +339,10 @@ class BinDepot{
 
 	function retrieve($id, $mode = null) {
 		return $this->handler->retrieve($id, $mode);
+	}
+
+	function getPath($id, $mode = null) {
+		return $this->handler->getPath($id, $mode);
 	}
 
 	function reconfig($mode = null) {
