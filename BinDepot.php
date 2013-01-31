@@ -1,4 +1,6 @@
 <?php
+namespace BinDepot;
+
 function xml_get_attr($xml, $attr, $default = null) {
 	$value = $xml->xpath($attr);
 	if(count($value) > 0)
@@ -16,7 +18,7 @@ class DiskFile {
 
 	function copyTo($path) {
 		if (!copy($this->path, $path)) {
-			throw new Exception("FileStorage: could not copy file: {$this->path} to $path");
+			throw new \Exception("FileStorage: could not copy file: {$this->path} to $path");
 		}
 	}
 }
@@ -28,7 +30,7 @@ class UploadFile {
 
 	function copyTo($path) {
 		if(!move_uploaded_file($this->path, $path)) {
-			throw new Exception("FileStorage: Could not move uploaded file: {$this->path}");
+			throw new \Exception("FileStorage: Could not move uploaded file: {$this->path}");
 		}
 	}
 }
@@ -152,7 +154,7 @@ class ImageHandler extends BinaryHandler {
 				$original = "gif";
 				break;
 			default:
-				throw new Exception("FileStorage: image format not supported, IMAGETYPE: {$info[2]}");
+				throw new \Exception("FileStorage: image format not supported, IMAGETYPE: {$info[2]}");
 				break;
 		}
 		$old_w = imagesx($image);
