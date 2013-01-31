@@ -292,21 +292,14 @@ class ImageHandler extends BinaryHandler {
 class BinDepot{
 
 	function __construct($store, $conf = 'bindepot.xml') {
-		$this->load_configuration($conf, $store);
-		if(@!file_exists($this->default_path)) {
-			throw new Exception("FileStorage: default storage directory does not exist: $this->default_path");
-		}
-		if(@!is_writable($this->default_path)) {
-			throw new Exception("FileStorage: default storage directory is not writable: $this->default_path");
-		}
-		if(@!file_exists($this->path))
-			mkdir($this->path, 0777);
-
-		$this->handler = $this->getHandler($store);
+		$this->store = $store;
+		$this->conf = $conf;
+		$this->initialized = false;
 	}
 
-	private function load_configuration($conf, $store) {
-		$conf = simplexml_load_file($conf);
+	private function load_configuration() {
+		$conf = simplexml_load_file($this->conf);
+		$store = $this->store;
 
 		$path = $conf->xpath('/bindepot/@default-path');
 		$this->default_path = isset($path[0]) ? $path[0]: '';
@@ -332,24 +325,46 @@ class BinDepot{
 		return $handler;
 	}
 
+	private function init() {
+		if(!$this->initialized) {
+			$this->load_configuration();
+			if(@!file_exists($this->default_path)) {
+				throw new Exception("FileStorage: default storage directory does not exist: $this->default_path");
+			}
+			if(@!is_writable($this->default_path)) {
+				throw new Exception("FileStorage: default storage directory is not writable: $this->default_path");
+			}
+			if(@!file_exists($this->path))
+				mkdir($this->path, 0777);
+
+			$this->handler = $this->getHandler($this->store);
+			$this->initialized = true;
+		}
+	}
+
 	function store($id, $file) {
+		$this->init();
 		$file = buildFile($file, $id);
 		$this->handler->store($id, $file);
 	}
 
 	function retrieve($id, $mode = null) {
+		$this->init();
 		return $this->handler->retrieve($id, $mode);
 	}
 
 	function getPath($id, $mode = null) {
+		$this->init();
 		return $this->handler->getPath($id, $mode);
 	}
 
 	function reconfig($mode = null) {
+		$this->init();
 		return $this->handler->reconfig($mode);
 	}
 
 	function find($expression = null) {
+		$this->init();
 		return $this->handler->find($expression);
 	}
 }
