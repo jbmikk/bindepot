@@ -1,5 +1,5 @@
 <?php
-require_once '../bindepot.php';
+require_once '../BinDepot.php';
 require_once 'PHPUnit/Framework.php';
 
 class FileTest extends PHPUnit_Framework_TestCase
