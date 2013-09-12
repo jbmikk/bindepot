@@ -331,10 +331,10 @@ class BinDepot{
 		if(!$this->initialized) {
 			$this->load_configuration();
 			if(@!file_exists($this->default_path)) {
-				throw new Exception("FileStorage: default storage directory does not exist: $this->default_path");
+				throw new \Exception("FileStorage: default storage directory does not exist: $this->default_path");
 			}
 			if(@!is_writable($this->default_path)) {
-				throw new Exception("FileStorage: default storage directory is not writable: $this->default_path");
+				throw new \Exception("FileStorage: default storage directory is not writable: $this->default_path");
 			}
 			if(@!file_exists($this->path))
 				mkdir($this->path, 0777);
